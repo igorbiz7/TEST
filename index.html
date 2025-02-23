@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Визуализация нитей</title>
+    <style>
+        body { margin: 0; background-color: black; }
+        canvas { display: block; }
+        #controls { position: absolute; top: 10px; left: 10px; color: white; }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="controls">
+        <label for="wind">Сила ветра: <span id="windValue">50</span></label>
+        <input type="range" id="wind" min="0" max="100" value="50">
+        <br>
+        <label for="scatter">Сила разброса: <span id="scatterValue">50</span></label>
+        <input type="range" id="scatter" min="0" max="100" value="50">
+        <br>
+        <label for="threads">Количество нитей: <span id="threadsValue">100</span></label>
+        <input type="range" id="threads" min="10" max="10000" value="100">
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
