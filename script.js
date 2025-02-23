@@ -1,57 +1,28 @@
+// Получаем элементы DOM (предполагается, что они уже есть в вашем коде)
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-const windSlider = document.getElementById('wind');
-const scatterSlider = document.getElementById('scatter');
-const threadsSlider = document.getElementById('threads');
-const windValue = document.getElementById('windValue');
-const scatterValue = document.getElementById('scatterValue');
+const windSlider = document.getElementById('windSlider');
+const threadsSlider = document.getElementById('threadsSlider');
 const threadsValue = document.getElementById('threadsValue');
 
-// Начальные значения параметров
 let windStrength = parseInt(windSlider.value);
-let scatterStrength = parseInt(scatterSlider.value);
 let numThreads = parseInt(threadsSlider.value);
+let threads = [];
 
-// Обработчики событий для ползунков
-windSlider.addEventListener('input', () => {
-    windStrength = parseInt(windSlider.value);
-    windValue.textContent = windStrength;
-});
-
-scatterSlider.addEventListener('input', () => {
-    scatterStrength = parseInt(scatterSlider.value);
-    scatterValue.textContent = scatterStrength;
-});
-
-threadsSlider.addEventListener('input', () => {
-    numThreads = parseInt(threadsSlider.value);
-    threadsValue.textContent = numThreads;
-    createThreads();
-});
-
-// Установка размеров canvas и обработка изменения окна
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    createThreads();
-});
-
-// Класс для нити
+// Класс Thread для одной нити
 class Thread {
     constructor(x, yTop, yBottom, scatter) {
-        this.x = x; // Базовая горизонтальная позиция
+        this.x = x; // Начальная позиция X
         this.yTop = yTop; // Верхняя точка
         this.yBottom = yBottom; // Нижняя точка
-        this.points = []; // Промежуточные точки
+        this.points = []; // Точки вдоль нити
         this.numPoints = 20; // Количество точек на нить
-        this.scatter = scatter; // Начальный разброс
+        this.scatter = scatter; // Сила разброса
+        this.speed = (Math.random() - 0.5) * 2; // Случайная скорость от -1 до 1
         this.initPoints();
     }
 
-    // Инициализация промежуточных точек
+    // Инициализация точек нити
     initPoints() {
         this.points = [];
         for (let i = 1; i < this.numPoints - 1; i++) {
@@ -61,12 +32,12 @@ class Thread {
         }
     }
 
-    // Обновление позиций точек под воздействием ветра
+    // Обновление позиций точек с учетом ветра и случайности
     update(time) {
-        for (let i = 1; i < this.numPoints - 1; i++) {
-            const baseX = this.x + (this.points[i - 1].x - this.x) * (i / (this.numPoints - 1));
-            const wave = Math.sin(time + i * 0.5) * windStrength * 0.1;
-            this.points[i - 1].x = baseX + wave;
+        for (let i = 0; i < this.points.length; i++) {
+            const baseX = this.x + (this.points[i].x - this.x) * (i / (this.numPoints - 1));
+            const wave = Math.sin(time * 0.001 + i * 0.5 + this.speed) * windStrength * 0.1;
+            this.points[i].x = baseX + wave + this.speed;
         }
     }
 
@@ -84,33 +55,47 @@ class Thread {
     }
 }
 
-// Массив нитей
-let threads = [];
-
 // Создание нитей
 function createThreads() {
     threads = [];
-    const spacing = canvas.width / (numThreads + 1);
-    for (let i = 1; i <= numThreads; i++) {
-        const x = i * spacing;
-        const scatter = scatterStrength * 10; // Усиление разброса
-        threads.push(new Thread(x, 0, canvas.height, scatter));
+    const scatterStrength = 20; // Можно привязать к ползунку, если он есть
+    for (let i = 0; i < numThreads; i++) {
+        const x = (i / (numThreads - 1)) * canvas.width;
+        threads.push(new Thread(x, 0, canvas.height, scatterStrength));
     }
 }
 
-// Инициализация нитей
-createThreads();
+// Настройка ползунка для количества нитей
+threadsSlider.min = 10;
+threadsSlider.max = 250;
+threadsSlider.value = 100; // Начальное значение
+numThreads = parseInt(threadsSlider.value);
+threadsValue.textContent = numThreads;
+
+// Обработка изменения ползунка
+threadsSlider.addEventListener('input', () => {
+    numThreads = parseInt(threadsSlider.value);
+    threadsValue.textContent = numThreads;
+    createThreads();
+});
+
+// Обработка изменения силы ветра
+windSlider.addEventListener('input', () => {
+    windStrength = parseInt(windSlider.value);
+});
 
 // Анимация
-let time = 0;
-function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // Очистка canvas
+function animate(time) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // Очистка канваса
     threads.forEach(thread => {
         thread.update(time);
         thread.draw();
     });
-    time += 0.05; // Шаг времени для плавности
     requestAnimationFrame(animate);
 }
 
-animate();
+// Инициализация
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+createThreads();
+requestAnimationFrame(animate);
